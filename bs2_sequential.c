@@ -2,10 +2,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 //#define NARRAY 10   // Array size
 //#define NBUCKET 5  // Number of buckets
-#define INTERVAL 10  // Each bucket capacity
+#define INTERVAL 1000  // Each bucket capacity
 
 struct Node {
   int data;
@@ -150,26 +151,48 @@ int getNumOfBuckets(int ar[],int size){
 
 int main(int argc, char** argv) {
   //int array[NARRAY] = {42, 32, 33, 52, 2, 37, 47, 15, 51, 20};
-  int *array;
-  if(argc > 2){
-        int size = atoi(argv[1]);
-        printf("Size: %d\n",size);
-        array = malloc(size*sizeof(int));
-        for(int i=2,j=0; i<argc; i++,j++){
-                //printf("arg %d: %s\n",i,argv[i]);
-                array[j] = atoi(argv[i]);
-                printf("Index %d: %d\n",j,array[j]);
-        }
-        int nbuckets = getNumOfBuckets(array,size);
-        printf("Initial array: ");
-        print(array,size);
-        printf("-------------\n");
 
-        BucketSort(array,size,nbuckets);
-        printf("-------------\n");
-        printf("Sorted array: ");
-        print(array,size);
-        return 0;
+  if(argc > 1){
+        FILE *f = NULL;
+        f = fopen(argv[1],"r");
+
+        if(f){
+                int *array;
+                char num[50];
+                char* t;
+                int first=1,size=0,i=0;
+                while(fgets(num,50,f)){
+                        t = strtok(num,"\r\n");
+                        int a = atoi(t);
+                        //printf("%d\n",a);
+                        if(first){
+                                size=a;
+                                first=0;
+                                array = malloc(size*sizeof(int));
+                        }
+                        else{
+                                array[i]=a;
+                        //      printf("Index %d: %d\n",i,array[i]);
+                                i++;
+                        }
+                }
+                printf("Size: %d\n",size);
+
+
+                int nbuckets = getNumOfBuckets(array,size);
+
+                printf("Initial array: ");
+                print(array,size);
+                printf("-------------\n");
+
+                BucketSort(array,size,nbuckets);
+                printf("-------------\n");
+                printf("Sorted array: ");
+                print(array,size);
+                return 0;
+        }else{
+                printf("File Not Found!\n");
+        }
   }
   else{
         printf("Insufficent arguments\n");
