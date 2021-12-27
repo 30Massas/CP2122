@@ -1,11 +1,16 @@
 import random
 
-def random_number():
-    return random.randint(1, 500000)
+size = input('Size: ')
 
-with open('Array50000.txt','w') as f:
-    content = '50000 '
-    for _ in range(50000):
+def random_number():
+    return random.randint(1, int(size))
+
+with open(f'array{size}.txt','w') as f:
+    content = f'{size}\n'
+    for i in range(int(size)):
         n = random_number()
-        content += str(n) + ' '
+        if i == int(size)-1:
+            content += str(n)
+        else:
+            content += str(n) + '\n'
     f.write(content)
