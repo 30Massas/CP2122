@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 
 //#define NARRAY 10   // Array size
 //#define NBUCKET 5  // Number of buckets
-#define INTERVAL 1000  // Each bucket capacity
+#define INTERVAL 10  // Each bucket capacity
 
 struct Node {
   int data;
@@ -23,18 +24,23 @@ int getNumOfBuckets(int arr[],int size);
 void BucketSort(int arr[], int size, int nbuckets){
   int i, j;
   struct Node **buckets;
+  int n = nbuckets/omp_get_num_threads();
 
   // Create buckets and allocate memory size
   buckets = (struct Node **)malloc(sizeof(struct Node *) * nbuckets);
 
   // Initalize empty buckets
   // Pode ser paralelizado
+  #pragma omp parallel
+  #pragma omp for
   for (i = 0; i < nbuckets; ++i) {
     buckets[i] = NULL;
   }
 
   // Fill the buckets with respective elements
   // Poder ser paralelizado
+  //#pragma omp parallel
+  //#pragma omp for schedule(static,n)
   for (i = 0; i < size; ++i) {
     struct Node *current;
     int pos = getBucketIndex(arr[i]);
@@ -45,31 +51,41 @@ void BucketSort(int arr[], int size, int nbuckets){
   }
 
   // Print the buckets along with their elements
-  // Poder ser paralelizado
-  for (i = 0; i < nbuckets; i++) {
-    printf("Bucket[%d]: ", i);
-    printBuckets(buckets[i]);
-    printf("\n");
-  }
+  // Poder ser paralelizado mas por ordem
+  //#pragma omp parallel
+  //#pragma omp for ordered
+  //for (i = 0; i < nbuckets; i++) {
+    //printf("Bucket[%d]: ", i);
+    //printBuckets(buckets[i]);
+    //printf("\n");
+  //}
 
   // Sort the elements of each bucket
   // Pode ser parelelizado
+  #pragma omp parallel
+  #pragma omp for
   for (i = 0; i < nbuckets; ++i) {
     buckets[i] = InsertionSort(buckets[i]);
   }
 
-  printf("-------------\n");
-  printf("Bucktets after sorting\n");
+  //printf("-------------\n");
+  //printf("Bucktets after sorting\n");
   // Paralelizado mas por ordem
-  for (i = 0; i < nbuckets; i++) {
-    printf("Bucket[%d]: ", i);
-    printBuckets(buckets[i]);
-    printf("\n");
-  }
+  //#pragma omp parallel
+  //#pragma omp for ordered
+  //for (i = 0; i < nbuckets; i++) {
+    //printf("Bucket[%d]: ", i);
+    //printBuckets(buckets[i]);
+    //printf("\n");
+    //#pragma omp barrier
+  //}
 
   // Put sorted elements on arr
   // Paralelizado?
-  for (j = 0, i = 0; i < nbuckets; ++i) {
+  j=0;
+  //#pragma omp parallel
+  //#pragma omp for
+  for (i = 0; i < nbuckets; i++) {
     struct Node *node;
     node = buckets[i];
     while (node) {
@@ -196,6 +212,9 @@ int main(int argc, char** argv) {
                 printf("-------------\n");
                 printf("Sorted array: ");
                 print(array,size);
+                printf("Size: %d\n",size);
+                printf("NBuckets: %d\n",nbuckets);
+                printf("Bucket Range: %d\n" ,INTERVAL);
                 return 0;
         }else{
                 printf("File Not Found!\n");
