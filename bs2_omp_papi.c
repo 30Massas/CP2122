@@ -1,5 +1,3 @@
-//Bucket sort in C
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +5,6 @@
 
 #include "papi.h"
 
-//#define NARRAY 10   // Array size
-//#define NBUCKET 5  // Number of buckets
 #define INTERVAL 10000  // Each bucket capacity
 #define NUM_EVENTS 4
 int Events[NUM_EVENTS] = { PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_L1_DCM, PAPI_L2_DCM};
@@ -210,7 +206,6 @@ int main (int argc, char *argv[]) {
                 while(fgets(num,50,f)){
                         t = strtok(num,"\r\n");
                         int a = atoi(t);
-                        //printf("%d\n",a);
                         if(first){
                                 size=a;
                                 first=0;
@@ -218,7 +213,6 @@ int main (int argc, char *argv[]) {
                         }
                         else{
                                 array[i]=a;
-                        //      printf("Index %d: %d\n",i,array[i]);
                                 i++;
                         }
                 }

@@ -1,12 +1,8 @@
-//Bucket sort in C
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
 
-//#define NARRAY 10   // Array size
-//#define NBUCKET 5  // Number of buckets
 #define INTERVAL 10000  // Each bucket capacity
 
 struct Node {
@@ -152,7 +148,6 @@ int getNumOfBuckets(int ar[],int size){
 }
 
 int main(int argc, char** argv) {
-  //int array[NARRAY] = {42, 32, 33, 52, 2, 37, 47, 15, 51, 20};
 
   if(argc > 1){
         FILE *f = NULL;
@@ -166,7 +161,6 @@ int main(int argc, char** argv) {
                 while(fgets(num,50,f)){
                         t = strtok(num,"\r\n");
                         int a = atoi(t);
-                        //printf("%d\n",a);
                         if(first){
                                 size=a;
                                 first=0;
@@ -174,7 +168,6 @@ int main(int argc, char** argv) {
                         }
                         else{
                                 array[i]=a;
-                        //      printf("Index %d: %d\n",i,array[i]);
                                 i++;
                         }
                 }
