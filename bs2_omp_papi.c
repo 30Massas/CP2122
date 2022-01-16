@@ -5,9 +5,17 @@
 #include <string.h>
 #include <omp.h>
 
+#include "papi.h"
+
 //#define NARRAY 10   // Array size
 //#define NBUCKET 5  // Number of buckets
 #define INTERVAL 10000  // Each bucket capacity
+#define NUM_EVENTS 4
+int Events[NUM_EVENTS] = { PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_L1_DCM, PAPI_L2_DCM};
+
+long long values[NUM_EVENTS], min_values[NUM_EVENTS];
+
+#define NUM_RUNS 5
 
 struct Node {
   int data;
@@ -24,7 +32,7 @@ int getNumOfBuckets(int arr[],int size);
 void BucketSort(int arr[], int size, int nbuckets){
   int i, j;
   struct Node **buckets;
-  int n = nbuckets/omp_get_num_threads();
+  //int n = nbuckets/omp_get_num_threads();
 
   // Create buckets and allocate memory size
   buckets = (struct Node **)malloc(sizeof(struct Node *) * nbuckets);
@@ -40,7 +48,7 @@ void BucketSort(int arr[], int size, int nbuckets){
   // Fill the buckets with respective elements
   // Poder ser paralelizado
   //#pragma omp parallel
-  //#pragma omp for schedule(dynamic)
+  //#pragma omp for schedule(static,n)
   for (i = 0; i < size; ++i) {
     struct Node *current;
     int pos = getBucketIndex(arr[i]);
@@ -49,7 +57,6 @@ void BucketSort(int arr[], int size, int nbuckets){
     current->next = buckets[pos];
     buckets[pos] = current;
   }
-
 
   // Sort the elements of each bucket
   // Pode ser parelelizado
@@ -151,10 +158,47 @@ int getNumOfBuckets(int ar[],int size){
    return n+1;
 }
 
-int main(int argc, char** argv) {
-  //int array[NARRAY] = {42, 32, 33, 52, 2, 37, 47, 15, 51, 20};
+int main (int argc, char *argv[]) {
+  long long start_usec, end_usec, elapsed_usec, min_usec=0L;
+  int num_hwcntrs = 0;
+  int i,run;
 
-  if(argc > 1){
+  fprintf (stdout, "\nSetting up PAPI...");
+  // Initialize PAPI
+  PAPI_library_init (PAPI_VER_CURRENT);
+
+  /* Get the number of hardware counters available */
+  if ((num_hwcntrs = PAPI_num_counters()) <= PAPI_OK)  {
+    fprintf (stderr, "PAPI error getting number of available hardware counters!\n");
+    return 0;
+  }
+  fprintf(stdout, "done!\nThis system has %d available counters.\n\n", num_hwcntrs);
+
+  // We will be using at most NUM_EVENTS counters
+  if (num_hwcntrs >= NUM_EVENTS) {
+    num_hwcntrs = NUM_EVENTS;
+  } else {
+    fprintf (stderr, "Error: there aren't enough counters to monitor %d events!\n", NUM_EVENTS);
+    return 0;
+  }
+
+
+  for (run=0 ; run < NUM_RUNS ; run++) {
+   fprintf (stderr, "\nrun=%d", run);
+
+   // use PAPI timer (usecs) - note that this is wall clock time
+   // for process time running in user mode -> PAPI_get_virt_usec()
+   // real and virtual clock cycles can also be read using the equivalent
+   // PAPI_get[real|virt]_cyc()
+   start_usec = PAPI_get_real_usec();
+
+   /* Start counting events */
+   if (PAPI_start_counters(Events, num_hwcntrs) != PAPI_OK) {
+     fprintf (stderr, "PAPI error starting counters!\n");
+     return 0;
+   }
+
+   if(argc > 1){
         FILE *f = NULL;
         f = fopen(argv[1],"r");
 
@@ -178,18 +222,21 @@ int main(int argc, char** argv) {
                                 i++;
                         }
                 }
+                printf("Size: %d\n",size);
 
 
                 int nbuckets = getNumOfBuckets(array,size);
 
+                //printf("Initial array: ");
+                //print(array,size);
+                //printf("-------------\n");
                 BucketSort(array,size,nbuckets);
-                printf("-------------\n");
-                printf("Sorted array: ");
-                print(array,size);
-                printf("Size: %d\n",size);
-                printf("NBuckets: %d\n",nbuckets);
-                printf("Bucket Range: %d\n" ,INTERVAL);
-                return 0;
+                //printf("-------------\n");
+                //printf("Sorted array: ");
+                //print(array,size);
+                // printf("Size: %d\n",size);
+                // printf("NBuckets: %d\n",nbuckets);
+                // printf("Bucket Range: %d\n" ,INTERVAL);
         }else{
                 printf("File Not Found!\n");
         }
@@ -199,4 +246,44 @@ int main(int argc, char** argv) {
         return 0;
   }
 
+   /* Stop counting events */
+   if (PAPI_stop_counters(values, NUM_EVENTS) != PAPI_OK) {
+     fprintf (stderr, "PAPI error stoping counters!\n");
+     return 0;
+   }
+
+   end_usec = PAPI_get_real_usec();
+   fprintf (stderr, "done!\n");
+
+   elapsed_usec = end_usec - start_usec;
+
+   if ((run==0) || (elapsed_usec < min_usec)) {
+      min_usec = elapsed_usec;
+      for (i=0 ; i< NUM_EVENTS ; i++) min_values[i] = values [i];
+   }
+
+  } // end runs
+  printf ("\nWall clock time: %lld usecs\n", min_usec);
+
+  // output PAPI counters' values
+  for (i=0 ; i< NUM_EVENTS ; i++) {
+          char EventCodeStr[PAPI_MAX_STR_LEN];
+
+          if (PAPI_event_code_to_name(Events[i], EventCodeStr) == PAPI_OK) {
+                fprintf (stdout, "%s = %lld\n", EventCodeStr, min_values[i]);
+          } else {
+                fprintf (stdout, "PAPI UNKNOWN EVENT = %lld\n", min_values[i]);
+          }
+  }
+
+#if NUM_EVENTS >1
+  // evaluate CPI and Texec here
+  if ((Events[0] == PAPI_TOT_CYC) && (Events[1] == PAPI_TOT_INS)) {
+    float CPI = ((float) min_values[0]) / ((float) min_values[1]);
+    fprintf (stdout, "CPI = %.2f\n", CPI);
+  }
+#endif
+
+  printf ("\nThat's all, folks\n");
+  return 1;
 }
