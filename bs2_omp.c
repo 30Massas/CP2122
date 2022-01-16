@@ -178,17 +178,12 @@ int main(int argc, char** argv) {
                                 i++;
                         }
                 }
-
+                printf("Size: %d\n",size);
 
                 int nbuckets = getNumOfBuckets(array,size);
 
                 BucketSort(array,size,nbuckets);
-                printf("-------------\n");
-                printf("Sorted array: ");
                 print(array,size);
-                printf("Size: %d\n",size);
-                printf("NBuckets: %d\n",nbuckets);
-                printf("Bucket Range: %d\n" ,INTERVAL);
                 return 0;
         }else{
                 printf("File Not Found!\n");

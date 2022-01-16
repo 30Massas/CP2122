@@ -227,16 +227,8 @@ int main (int argc, char *argv[]) {
 
                 int nbuckets = getNumOfBuckets(array,size);
 
-                //printf("Initial array: ");
-                //print(array,size);
-                //printf("-------------\n");
                 BucketSort(array,size,nbuckets);
-                //printf("-------------\n");
-                //printf("Sorted array: ");
                 //print(array,size);
-                // printf("Size: %d\n",size);
-                // printf("NBuckets: %d\n",nbuckets);
-                // printf("Bucket Range: %d\n" ,INTERVAL);
         }else{
                 printf("File Not Found!\n");
         }

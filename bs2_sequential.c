@@ -42,24 +42,9 @@ void BucketSort(int arr[], int size, int nbuckets){
     buckets[pos] = current;
   }
 
-  // Print the buckets along with their elements
-  for (i = 0; i < nbuckets; i++) {
-    printf("Bucket[%d]: ", i);
-    printBuckets(buckets[i]);
-    printf("\n");
-  }
-
   // Sort the elements of each bucket
   for (i = 0; i < nbuckets; ++i) {
     buckets[i] = InsertionSort(buckets[i]);
-  }
-
-  printf("-------------\n");
-  printf("Bucktets after sorting\n");
-  for (i = 0; i < nbuckets; i++) {
-    printf("Bucket[%d]: ", i);
-    printBuckets(buckets[i]);
-    printf("\n");
   }
 
   // Put sorted elements on arr
@@ -181,14 +166,9 @@ int main(int argc, char** argv) {
 
                 int nbuckets = getNumOfBuckets(array,size);
 
-                printf("Initial array: ");
-                print(array,size);
-                printf("-------------\n");
-
                 BucketSort(array,size,nbuckets);
-                printf("-------------\n");
-                printf("Sorted array: ");
                 print(array,size);
+                
                 return 0;
         }else{
                 printf("File Not Found!\n");
